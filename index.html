@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Platinum - Playstation Gaming Center</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Cairo:wght@400;600;700&display=swap');
+
+  :root {
+    --bg-main: #05050A;
+    --bg-card: #0D0F1A;
+    --bg-input: #141829;
+    --neon-blue: #00A8FF;
+    --neon-purple: #8A2BE2;
+    --neon-pink: #E6007E;
+    --neon-cyan: #00E5FF;
+    --text-main: #FFFFFF;
+    --text-muted: #8E98B3;
+    --border-color: #1E2640;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
+  
+  body { 
+    background-color: var(--bg-main); 
+    color: var(--text-main); 
+    padding: 15px; 
+    background-image: 
+      radial-gradient(circle at top left, rgba(138, 43, 226, 0.08) 0%, transparent 40%),
+      radial-gradient(circle at bottom right, rgba(0, 168, 255, 0.08) 0%, transparent 40%);
+    background-attachment: fixed;
+  }
+
+  #loadingScreen {
+    position: fixed; inset: 0; background: var(--bg-main); z-index: 9999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .loader {
+    border: 4px solid var(--border-color); border-top: 4px solid var(--neon-cyan);
+    border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 15px;
+  }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+  .site-header { text-align: center; margin-bottom: 25px; padding: 15px 0; }
+  .brand-logo {
+    font-family: 'Orbitron', sans-serif; font-size: 34px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase;
+    background: linear-gradient(to right, #FFF, #00E5FF, #8A2BE2, #E6007E, #FFF);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 20px rgba(0, 229, 255, 0.3); display: inline-block;
+  }
+  .brand-sub { display: block; font-family: 'Orbitron', sans-serif; font-size: 10px; color: var(--text-muted); letter-spacing: 6px; margin-top: 4px; text-transform: uppercase; }
+  .ps-symbols { font-family: Arial, sans-serif; color: var(--text-muted); font-size: 14px; letter-spacing: 10px; margin-top: 10px; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
+
+  .tabs { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; justify-content: center; }
+  .tab-btn { 
+    flex: 1; min-width: 120px; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-color); 
+    color: var(--text-muted); cursor: pointer; border-radius: 8px; font-size: 15px; font-weight: 700; transition: all 0.3s ease; position: relative;
+  }
+  .tab-btn:hover { border-color: var(--neon-cyan); color: var(--text-main); }
+  .tab-btn.active { 
+    background: linear-gradient(90deg, rgba(0, 168, 255, 0.15) 0%, rgba(138, 43, 226, 0.15) 100%);
+    color: var(--text-main); border-color: var(--neon-blue);
+    box-shadow: 0 0 15px rgba(0, 168, 255, 0.2) inset, 0 0 10px rgba(0, 168, 255, 0.1);
+  }
+  .tab-btn.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink)); }
+
+  .section { display: none; animation: fadeIn 0.3s ease; }
+  .section.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+  .card { background: var(--bg-card); padding: 18px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--border-color); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); }
+  .device-card { 
+    background: var(--bg-card); padding: 18px; border-radius: 12px; margin-bottom: 15px; 
+    border: 1px solid var(--border-color); border-right: 4px solid var(--neon-blue); 
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); position: relative;
+  }
+  .device-card:has(.status.busy) { border-right-color: var(--neon-pink); box-shadow: 0 0 15px rgba(230, 0, 126, 0.1); }
+
+  .device-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 8px; }
+  .device-name { font-size: 18px; font-weight: 700; color: var(--text-main); text-shadow: 0 0 10px rgba(255,255,255,0.1); }
+  .status { padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+  .status.free { background: rgba(0, 168, 255, 0.1); color: var(--neon-cyan); border: 1px solid rgba(0, 229, 255, 0.3); }
+  .status.busy { background: rgba(230, 0, 126, 0.1); color: var(--neon-pink); border: 1px solid rgba(230, 0, 126, 0.3); }
+
+  .btn { padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; transition: all 0.2s; font-family: 'Cairo', sans-serif; }
+  .btn-start { background: linear-gradient(135deg, var(--neon-blue), #0056b3); color: white; box-shadow: 0 0 10px rgba(0, 168, 255, 0.3); }
+  .btn-start:hover { box-shadow: 0 0 20px rgba(0, 168, 255, 0.6); transform: translateY(-1px); }
+  .btn-stop { background: linear-gradient(135deg, var(--neon-pink), #990054); color: white; box-shadow: 0 0 10px rgba(230, 0, 126, 0.3); }
+  .btn-stop:hover { box-shadow: 0 0 20px rgba(230, 0, 126, 0.6); transform: translateY(-1px); }
+  .btn-primary { background: linear-gradient(90deg, var(--neon-cyan), var(--neon-blue)); color: #000; padding: 10px 20px; font-size: 14px; box-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
+  .btn-primary:hover { box-shadow: 0 0 20px rgba(0, 229, 255, 0.6); }
+  .btn-del { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border: 1px solid var(--border-color); }
+  .btn-del:hover { background: rgba(230, 0, 126, 0.1); color: var(--neon-pink); border-color: var(--neon-pink); }
+
+  .icon-btn { 
+    background: rgba(255, 255, 255, 0.03); color: var(--text-muted); border: 1px solid var(--border-color); 
+    width: 38px; height: 38px; border-radius: 8px; cursor: pointer; font-size: 16px; 
+    display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; 
+  }
+  .icon-btn:hover { background: rgba(230, 0, 126, 0.15); color: var(--neon-pink); border-color: var(--neon-pink); box-shadow: 0 0 10px rgba(230, 0, 126, 0.2); }
+
+  input, select { 
+    padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); 
+    color: var(--text-main); font-size: 14px; font-family: 'Cairo', sans-serif; transition: all 0.2s;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0, 168, 255, 0.2); }
+  input[type="number"] { width: 100px; }
+  .form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
+
+  .timer { font-size: 24px; font-weight: 700; color: var(--neon-pink); font-family: 'Orbitron', sans-serif; letter-spacing: 2px; text-shadow: 0 0 10px rgba(230, 0, 126, 0.4); }
+  .cost { color: var(--neon-cyan); font-weight: 700; }
+
+  .invoice { background: var(--bg-input); padding: 20px; border-radius: 10px; border: 1px solid var(--neon-blue); box-shadow: 0 0 15px rgba(0, 168, 255, 0.1) inset; }
+  .invoice-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-main); }
+  .invoice-total { display: flex; justify-content: space-between; padding-top: 15px; font-size: 20px; font-weight: 700; color: var(--neon-cyan); margin-top: 15px; border-top: 2px dashed var(--border-color); text-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
+
+  .product-select-container { margin-top: 10px; display: flex; gap: 8px; align-items: center; }
+  .product-select {
+    flex: 1; max-width: 250px; padding: 8px 12px; border-radius: 8px; background: rgba(0, 168, 255, 0.05);
+    border: 1px dashed var(--neon-blue); color: var(--neon-cyan); cursor: pointer; font-weight: bold;
+  }
+  .product-select:hover { background: rgba(0, 168, 255, 0.1); }
+  .product-select option { background: var(--bg-card); color: var(--text-main); }
+
+  .products-list { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .product-chip { 
+    padding: 8px 14px; background: var(--bg-input); border-radius: 20px; font-size: 13px; 
+    border: 1px solid var(--border-color); display: inline-flex; align-items: center; gap: 8px; color: var(--text-main);
+  }
+  .product-chip.added { background: rgba(230, 0, 126, 0.15); border-color: var(--neon-pink); box-shadow: 0 0 8px rgba(230, 0, 126, 0.2); }
+  .product-chip .x { 
+    font-weight: 700; cursor: pointer; background: rgba(255, 255, 255, 0.1); color: #fff; border-radius: 50%; 
+    width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.2s; 
+  }
+  .product-chip .x:hover { background: var(--neon-pink); color: white; box-shadow: 0 0 8px var(--neon-pink); }
+
+  .report-item { padding: 12px; background: var(--bg-input); margin-bottom: 10px; border-radius: 8px; border-right: 3px solid var(--neon-cyan); box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+  .report-item small { color: var(--text-muted); }
+  
+  .total-box { background: rgba(0, 168, 255, 0.05); padding: 15px; border-radius: 10px; text-align: center; margin-top: 15px; border: 1px solid rgba(0, 168, 255, 0.2); }
+  .total-box span { color: var(--neon-cyan); font-size: 22px; font-weight: 700; text-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
+
+  /* ملخص التقارير */
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+  .summary-item { background: var(--bg-input); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; }
+  .summary-item small { color: var(--text-muted); display: block; margin-bottom: 5px; font-weight: 700; }
+  .summary-item span { color: var(--neon-cyan); font-weight: bold; font-size: 16px; }
+
+  h3 { margin-bottom: 15px; color: var(--text-main); font-size: 16px; border-right: 3px solid var(--neon-blue); padding-right: 10px; }
+  .empty { text-align: center; padding: 30px; color: var(--text-muted); font-size: 14px; }
+  .date-filter { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
+  .divider { height: 1px; background: var(--border-color); margin: 15px 0; }
+
+  #overlay { display: none; position: fixed; inset: 0; background: rgba(5, 5, 10, 0.85); backdrop-filter: blur(5px); z-index: 999; }
+  #invoiceModal { 
+    display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+    background: var(--bg-card); padding: 25px; border-radius: 15px; width: 90%; max-width: 450px; 
+    z-index: 1000; max-height: 85vh; overflow-y: auto; border: 1px solid var(--neon-blue); 
+    box-shadow: 0 0 30px rgba(0, 168, 255, 0.3);
+  }
+
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg-main); }
+  ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--neon-blue); }
+</style>
+</head>
+<body>
+
+<div id="loadingScreen">
+  <div class="loader"></div>
+  <h2 style="color: var(--neon-cyan); font-family: 'Orbitron';">جاري الاتصال بالسيرفر...</h2>
+</div>
+
+<div class="site-header">
+  <div class="brand-logo">PLATINUM</div>
+  <span class="brand-sub">Playstation Gaming Center</span>
+  <div class="ps-symbols">△ ○ × □</div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('devices', event)">🖥️ الأجهزة</button>
+  <button class="tab-btn" onclick="showTab('reports', event)">📊 التقارير</button>
+  <button class="tab-btn" onclick="showTab('products', event)">📦 المنتجات</button>
+</div>
+
+<div id="devices" class="section active">
+  <div class="card">
+    <h3>إضافة جهاز جديد</h3>
+    <div class="form-row">
+      <input type="text" id="newDeviceName" placeholder="اسم الجهاز (مثال: PS5 - جهاز 1)" style="flex:1; min-width: 200px;">
+      <input type="number" id="newDevicePrice" placeholder="سعر الساعة" value="30">
+      <button class="btn btn-primary" onclick="addDevice()">+ إضافة جهاز</button>
+    </div>
+  </div>
+  <div id="devicesList"></div>
+</div>
+
+<div id="reports" class="section">
+  <div class="card">
+    <h3>📊 التقارير</h3>
+    <div class="date-filter">
+      <label style="color: var(--text-muted)">التاريخ:</label>
+      <input type="date" id="reportDate" onchange="showAllMode=false; renderReports()">
+      <button class="btn btn-primary" onclick="setToday()">اليوم</button>
+      <button class="btn btn-del" onclick="showAllReports()">عرض الكل</button>
+    </div>
+
+    <!-- ملخص التقارير -->
+    <div class="summary-grid">
+      <div class="summary-item">
+        <small>⏱️ إيراد ساعات اللعب</small>
+        <span id="sumTimeRevenue">0 ج</span>
+      </div>
+      <div class="summary-item">
+        <small>📦 إيراد المنتجات</small>
+        <span id="sumProdsRevenue">0 ج</span>
+      </div>
+    </div>
+
+    <div id="reportsList"></div>
+    <div class="total-box">
+      إجمالي الفترة: <span id="todayTotal">0</span> جنيه
+    </div>
+    <button class="btn btn-del" style="margin-top:15px; width:100%;" onclick="clearDayReports()">🗑️ تصفير تقارير الفترة المختارة</button>
+  </div>
+</div>
+
+<div id="products" class="section">
+  <div class="card">
+    <h3>إضافة منتج جديد</h3>
+    <div class="form-row">
+      <input type="text" id="newProductName" placeholder="اسم المنتج" style="flex:1; min-width: 180px;">
+      <input type="number" id="newProductPrice" placeholder="السعر" value="10">
+      <button class="btn btn-primary" onclick="addProduct()">+ إضافة منتج</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>قائمة المنتجات</h3>
+    <div id="productsList"></div>
+  </div>
+</div>
+
+<div id="overlay"></div>
+<div id="invoiceModal"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+  import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDEJTNUxL8Pn2wNipsep9ih29qJCL4C9ps",
+    authDomain: "platinum-ps7.firebaseapp.com",
+    projectId: "platinum-ps7",
+    storageBucket: "platinum-ps7.firebasestorage.app",
+    messagingSenderId: "515965449622",
+    appId: "1:515965449622:web:028970cb86b0f5fb8f19b7",
+    measurementId: "G-1N2EWLLDGJ"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  let devices = [], products = [], reports = [], invoices = {};
+  let showAllMode = false;
+  const loadingScreen = document.getElementById('loadingScreen');
+
+  function showError(msg) {
+    loadingScreen.innerHTML = `<div style="color: #E6007E; text-align: center; padding: 20px;"><h2>⚠️ خطأ</h2><p>${msg}</p></div>`;
+  }
+
+  // ربط البيانات
+  onSnapshot(collection(db, "devices"), (snapshot) => {
+    devices = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderDevices(); loadingScreen.style.display = 'none';
+  }, (error) => showError(error.message));
+
+  onSnapshot(collection(db, "products"), (snapshot) => {
+    products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderProducts(); renderDevices();
+  }, (error) => showError(error.message));
+
+  onSnapshot(collection(db, "reports"), (snapshot) => {
+    reports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderReports();
+  }, (error) => showError(error.message));
+
+  onSnapshot(collection(db, "activeInvoices"), (snapshot) => {
+    invoices = {};
+    snapshot.docs.forEach(doc => {
+      invoices[doc.data().deviceId] = doc.data().products || [];
+    });
+    renderDevices(); loadingScreen.style.display = 'none';
+  }, (error) => showError(error.message));
+
+  window.showTab = function(name, e) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(name).classList.add('active');
+    if (e) e.target.classList.add('active');
+    if (name === 'reports') renderReports();
+  };
+
+  // ===== إدارة الأجهزة =====
+  window.addDevice = async function() {
+    const name = document.getElementById('newDeviceName').value.trim();
+    const price = parseFloat(document.getElementById('newDevicePrice').value) || 30;
+    if (!name) return alert('اكتب اسم الجهاز');
+    await addDoc(collection(db, "devices"), { name, pricePerHour: price, startTime: null });
+    document.getElementById('newDeviceName').value = '';
+  };
+
+  window.deleteDevice = async function(id) {
+    const d = devices.find(x => x.id === id);
+    if (!d) return;
+    if (d.startTime) { if (!confirm('الجهاز شغال! متأكد من الحذف؟')) return; }
+    else { if (!confirm(`حذف "${d.name}"؟`)) return; }
+    
+    await deleteDoc(doc(db, "devices", id));
+    const q = query(collection(db, "activeInvoices"), where("deviceId", "==", id));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(async (document) => await deleteDoc(doc(db, "activeInvoices", document.id)));
+  };
+
+  window.startDevice = async function(id) {
+    await updateDoc(doc(db, "devices", id), { startTime: Date.now() });
+    
+    const q = query(collection(db, "activeInvoices"), where("deviceId", "==", id));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      await addDoc(collection(db, "activeInvoices"), { deviceId: id, products: [] });
+    }
+  };
+
+  window.stopDevice = async function(id) {
+    const d = devices.find(x => x.id === id);
+    if (!d || !d.startTime) return;
+    
+    const prods = invoices[id] || [];
+    const elapsedMs = Date.now() - d.startTime;
+    const timeCost = Math.round((elapsedMs / 3600000) * d.pricePerHour * 100) / 100;
+    const prodCost = prods.reduce((s, p) => s + p.price, 0);
+    const total = Math.round((timeCost + prodCost) * 100) / 100;
+
+    showInvoice(d.name, elapsedMs, timeCost, prods, prodCost, total);
+
+    await addDoc(collection(db, "reports"), {
+      device: d.name, time: Math.floor(elapsedMs / 60000),
+      timeCost, products: [...prods], prodCost, total, date: new Date().toISOString()
+    });
+
+    await updateDoc(doc(db, "devices", id), { startTime: null });
+    const q = query(collection(db, "activeInvoices"), where("deviceId", "==", id));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(async (document) => await deleteDoc(doc(db, "activeInvoices", document.id)));
+  };
+
+  // ===== إضافة منتجات للفاتورة =====
+  window.addProductToDevice = async function(deviceId, selectElement) {
+    const productId = selectElement.value;
+    if (!productId) return;
+    
+    const p = products.find(x => x.id === productId);
+    if (!p) return;
+
+    const q = query(collection(db, "activeInvoices"), where("deviceId", "==", deviceId));
+    const snapshot = await getDocs(q);
+    
+    try {
+      if (snapshot.empty) {
+        await addDoc(collection(db, "activeInvoices"), {
+          deviceId: deviceId, 
+          products: [{ name: p.name, price: p.price }]
+        });
+      } else {
+        const docRef = doc(db, "activeInvoices", snapshot.docs[0].id);
+        const currentProds = snapshot.docs[0].data().products || [];
+        currentProds.push({ name: p.name, price: p.price });
+        await updateDoc(docRef, { products: currentProds });
+      }
+      selectElement.value = ""; 
+    } catch (error) {
+      console.error("خطأ في إضافة المنتج: ", error);
+      alert("حدث خطأ أثناء إضافة المنتج، جرب تاني.");
+    }
+  };
+
+  window.removeDeviceProduct = async function(deviceId, idx) {
+    const q = query(collection(db, "activeInvoices"), where("deviceId", "==", deviceId));
+    const snapshot = await getDocs(q);
+    if (!snapshot.empty) {
+      const docRef = doc(db, "activeInvoices", snapshot.docs[0].id);
+      const currentProds = snapshot.docs[0].data().products || [];
+      currentProds.splice(idx, 1);
+      await updateDoc(docRef, { products: currentProds });
+    }
+  };
+
+  // ===== إدارة المنتجات الأساسية =====
+  window.addProduct = async function() {
+    const name = document.getElementById('newProductName').value.trim();
+    const price = parseFloat(document.getElementById('newProductPrice').value) || 10;
+    if (!name) return alert('اكتب اسم المنتج');
+    await addDoc(collection(db, "products"), { name, price });
+    document.getElementById('newProductName').value = '';
+  };
+
+  window.deleteProduct = async function(id) {
+    if (!confirm('حذف المنتج نهائياً؟')) return;
+    await deleteDoc(doc(db, "products", id));
+  };
+
+  // ===== الريندر =====
+  function showInvoice(name, ms, timeCost, prods, prodCost, total) {
+    const mins = Math.floor(ms / 60000), hrs = Math.floor(mins / 60);
+    let html = `<h3 style="font-size:20px; text-align:center;">🧾 فاتورة: ${name}</h3><div class="invoice">`;
+    html += `<div class="invoice-item"><span>⏱️ وقت اللعب (${hrs}س ${mins%60}د)</span><span class="cost">${timeCost} ج</span></div>`;
+    prods.forEach(p => html += `<div class="invoice-item"><span>${p.name}</span><span class="cost">${p.price} ج</span></div>`);
+    html += `<div class="invoice-total"><span>الإجمالي</span><span>${total} ج</span></div></div>`;
+    html += `<button class="btn btn-primary" style="margin-top:20px;width:100%; padding: 12px; font-size: 16px;" onclick="closeInvoice()">✅ تم (إغلاق)</button>`;
+    
+    document.getElementById('invoiceModal').innerHTML = html;
+    document.getElementById('invoiceModal').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+  }
+
+  window.closeInvoice = function() {
+    document.getElementById('invoiceModal').style.display = 'none';
+    document.getElementById('overlay').style.display = 'none';
+  };
+
+  function renderDevices() {
+    const devicesList = document.getElementById('devicesList');
+    if (devices.length === 0) {
+      devicesList.innerHTML = '<div class="empty">لا توجد أجهزة. أضف جهاز من الأعلى.</div>';
+      return;
+    }
+    
+    devicesList.innerHTML = devices.map(d => {
+      const isBusy = !!d.startTime;
+      const prods = invoices[d.id] || [];
+      const prodCost = prods.reduce((s, p) => s + p.price, 0);
+      
+      let timer = '';
+      if (isBusy) {
+        const ms = Date.now() - d.startTime;
+        const m = Math.floor(ms / 60000), s = Math.floor((ms % 60000) / 1000);
+        timer = `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      }
+      
+      return `
+        <div class="device-card">
+          <div class="device-header">
+            <span class="device-name">${d.name}</span>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span class="status ${isBusy ? 'busy' : 'free'}">${isBusy ? '🔴 مشغول' : '🟢 متاح'}</span>
+              <button class="icon-btn" onclick="deleteDevice('${d.id}')" title="حذف الجهاز">🗑️</button>
+            </div>
+          </div>
+          <div class="form-row">
+            <span style="color: var(--text-muted)">سعر الساعة: <b style="color:var(--text-main)">${d.pricePerHour} ج</b></span>
+            ${isBusy ? `<span class="timer" data-id="${d.id}">${timer}</span>` : ''}
+          </div>
+          <div class="form-row">
+            ${isBusy
+              ? `<button class="btn btn-stop" onclick="stopDevice('${d.id}')">⏹️ إنهاء + فاتورة</button>`
+              : `<button class="btn btn-start" onclick="startDevice('${d.id}')">▶️ بدء الوقت</button>`}
+          </div>
+          
+          <div class="divider"></div>
+          
+          <div>
+            <small style="color:var(--text-muted)">📦 إضافة منتج للفاتورة:</small>
+            <div class="product-select-container">
+              ${products.length === 0 
+                ? '<small style="color:var(--text-muted)">لا توجد منتجات.</small>' 
+                : `<select class="product-select" onchange="addProductToDevice('${d.id}', this)">
+                    <option value="">+ اختر منتج...</option>
+                    ${products.map(p => `<option value="${p.id}">${p.name} - ${p.price}ج</option>`).join('')}
+                  </select>`
+              }
+            </div>
+            ${prods.length > 0 ? `
+              <div style="margin-top:12px; font-size:13px; color:var(--neon-cyan); font-weight:bold;">📋 على الفاتورة (${prods.length}) - إجمالي: ${prodCost} ج:</div>
+              <div class="products-list">
+                ${prods.map((p, i) => `
+                  <span class="product-chip added">
+                    ${p.name} - ${p.price}ج
+                    <span class="x" onclick="removeDeviceProduct('${d.id}', ${i})" title="حذف من الفاتورة">×</span>
+                  </span>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderProducts() {
+    const productsList = document.getElementById('productsList');
+    if (products.length === 0) {
+      productsList.innerHTML = '<div class="empty">لا توجد منتجات. أضف منتج من الأعلى.</div>';
+      return;
+    }
+    productsList.innerHTML = products.map(p => `
+      <div class="device-card" style="border-right-color:var(--neon-cyan)">
+        <div class="device-header">
+          <span class="device-name">${p.name}</span>
+          <div style="display:flex; gap:12px; align-items:center;">
+            <span style="color:var(--neon-cyan); font-weight:bold; font-size:16px;">${p.price} ج</span>
+            <button class="icon-btn" onclick="deleteProduct('${p.id}')" title="حذف">🗑️</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderReports() {
+    const dateInput = document.getElementById('reportDate');
+    if (!dateInput.value && !showAllMode) dateInput.value = new Date().toISOString().split('T')[0];
+    
+    let filtered = showAllMode ? reports : reports.filter(r => {
+      const d = new Date(r.date);
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` === dateInput.value;
+    });
+
+    filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+    const reportsList = document.getElementById('reportsList');
+    
+    let totalTimeRevenue = 0;
+    let totalProductsRevenue = 0;
+
+    if (filtered.length === 0) {
+      reportsList.innerHTML = '<div class="empty">لا توجد فواتير في هذه الفترة.</div>';
+    } else {
+      reportsList.innerHTML = filtered.map(r => {
+        totalTimeRevenue += (r.timeCost || 0);
+        totalProductsRevenue += (r.prodCost || 0);
+
+        const d = new Date(r.date);
+        const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} - ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        return `
+          <div class="report-item">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px">
+              <b style="color:var(--text-main); font-size:16px;">${r.device}</b>
+              <span class="cost" style="font-size:16px;">${r.total} ج</span>
+            </div>
+            <small>📅 ${dateStr}</small><br>
+            <small>⏱️ ${r.time} دقيقة = ${r.timeCost} ج</small><br>
+            ${r.products.length > 0 ? `<small>📦 ${r.products.map(p=>p.name).join(', ')} = ${r.prodCost} ج</small>` : '<small>لا منتجات</small>'}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // تحديث ملخص الإيرادات
+    document.getElementById('sumTimeRevenue').textContent = `${Math.round(totalTimeRevenue * 100) / 100} ج`;
+    document.getElementById('sumProdsRevenue').textContent = `${Math.round(totalProductsRevenue * 100) / 100} ج`;
+
+    document.getElementById('todayTotal').textContent = Math.round(filtered.reduce((s, r) => s + r.total, 0) * 100) / 100;
+  }
+
+  window.setToday = function() {
+    document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
+    showAllMode = false;
+    renderReports();
+  };
+
+  window.showAllReports = function() {
+    showAllMode = true;
+    renderReports();
+  };
+
+  window.clearDayReports = async function() {
+    let toDelete = [];
+    if (showAllMode) {
+      if (!confirm('حذف كل التقارير نهائياً؟')) return;
+      toDelete = reports;
+    } else {
+      const selected = document.getElementById('reportDate').value;
+      if (!selected) return alert('اختر التاريخ أولاً');
+      if (!confirm(`حذف تقارير يوم ${selected}؟`)) return;
+      toDelete = reports.filter(r => {
+        const d = new Date(r.date);
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` === selected;
+      });
+    }
+    for (const r of toDelete) await deleteDoc(doc(db, "reports", r.id));
+  };
+
+  setInterval(() => {
+    devices.forEach(d => {
+      if (d.startTime) {
+        const el = document.querySelector(`.timer[data-id="${d.id}"]`);
+        if (el) {
+          const ms = Date.now() - d.startTime;
+          const m = Math.floor(ms / 60000), s = Math.floor((ms % 60000) / 1000);
+          el.textContent = `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        }
+      }
+    });
+  }, 1000);
+
+</script>
+</body>
+</html>
